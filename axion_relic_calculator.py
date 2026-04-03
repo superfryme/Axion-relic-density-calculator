@@ -29,14 +29,14 @@ def entropy_factor(T):
     return (g_star_s(T) * T**3) / (g_star_s(T0) * T0**3)
 
 # Parameters - feel free to change these!
-f_a = 1e12                    # PQ scale in GeV
-theta_i = 0.5                 # initial misalignment
-m_a0 = 5.7e-6 * (1e12 / f_a) * 1e-9   # axion mass today
+f_a = 1e12
+theta_i = 0.5
+m_a0 = 5.7e-6 * (1e12 / f_a) * 1e-9
 Gamma_string = 65.0
 xi = 0.3
 Gamma_wall = 10.0
 N_wall_per_string = 1
-eta_map = 1.1                 # mild resonance boost for misalignment
+eta_map = 1.1
 
 def find_T_osc(m_a0):
     def eq(T):
@@ -46,7 +46,7 @@ def find_T_osc(m_a0):
 
 T_osc = find_T_osc(m_a0)
 
-# Integrands with Grok WKB resonance tuning
+# Integrands with Grok resonance enhancement (η_WKB = WKB reflection coefficient)
 def integrand_misalignment(T, m_a0, theta_i):
     rho_at_T = 0.5 * m_a(T, m_a0)**2 * (theta_i * f_a)**2
     return rho_at_T * eta_map * entropy_factor(T) / H(T)
@@ -62,7 +62,7 @@ def integrand_walls(T, m_a0, eta_WKB):
     dna_dt = (Gamma_wall * sigma * N_wall_per_string) / (2.2 * m_a(T, m_a0) * t**2)
     return dna_dt * (1 - eta_WKB) * entropy_factor(T) / H(T)
 
-# Compute values
+# Compute for plot
 eta_values = np.linspace(0.0, 1.0, 21)
 omega_mis_list = []
 omega_defects_list = []
@@ -91,5 +91,45 @@ for i in [0, 5, 10, 15, 20]:
     eta = eta_values[i]
     print(f"{eta:.2f}   | {omega_mis_list[i]:.4f}      | {omega_defects_list[i]:.4f}   | {omega_total_list[i]:.4f}")
 
-print("\nThe full color-coded ASCII plot is available in our chat if you want to add the visual version next!")
+# === Color-Coded ASCII Plot ===
+print("\n=== Color-Coded ASCII Plot: Total Observable Relic Density vs η_WKB ===")
+print("BLUE = Misalignment | GOLD = Defects (strings+walls) | TEAL = Total")
 
+BLUE = '\033[94m'
+GOLD = '\033[93m'
+TEAL = '\033[96m'
+RESET = '\033[0m'
+
+v_steps = 26
+h_width = 60
+print("     Ω h²  0.25 ┌" + "─" * h_width + "┐")
+
+for v in range(v_steps):
+    level = 0.25 - v * 0.01
+    line = f"      {level:4.2f} │"
+    for i in range(len(eta_values)-1):
+        omega_mis = omega_mis_list[i]
+        omega_def = omega_defects_list[i]
+        omega_tot = omega_total_list[i]
+        bar_width = h_width // (len(eta_values)-1)
+        for _ in range(bar_width):
+            if omega_tot >= level:
+                line += TEAL + "█" + RESET
+            elif omega_def >= level:
+                line += GOLD + "█" + RESET
+            elif omega_mis >= level:
+                line += BLUE + "█" + RESET
+            else:
+                line += " "
+    line += "│"
+    print(line)
+
+print("      0.00 └" + "─" * h_width + "┘")
+print("            0.0" + " " * (h_width//2 - 6) + "η_WKB" + " " * (h_width//2 - 7) + "1.0")
+print("           (No resonance)               (Full WKB reflection)")
+
+print("\nLegend:")
+print(BLUE + "███" + RESET + " Misalignment (stable)")
+print(GOLD + "███" + RESET + " Defects contribution (declines with η_WKB)")
+print(TEAL + "███" + RESET + " Total observable relic density")
+print("Higher η_WKB = gentler mapping of miniclusters (harmony without extraction)")
